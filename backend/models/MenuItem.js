@@ -40,6 +40,8 @@ const menuItemSchema = new mongoose.Schema(
       default: "",
     },
 
+    imagePublicId: { type: String, default: "" },
+
     // Example: Pizza, Burger, Biryani
     category: {
       type: String,

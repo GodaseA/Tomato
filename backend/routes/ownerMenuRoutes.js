@@ -19,6 +19,7 @@ const menuItemSchema = z.object({
   description: z.string().trim().max(1000).default(""),
   price: z.number().finite().min(0.01).max(100000),
   image: z.string().url().max(2000).optional().or(z.literal("")),
+  imagePublicId: z.string().max(300).optional().or(z.literal("")),
   category: z.string().trim().min(1).max(80),
   foodType: z.enum([
     "vegetarian",

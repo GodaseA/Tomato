@@ -10,7 +10,7 @@ export const requireAuth = async (req, res, next) => {
     }
 
     const user = await User.findById(req.session.userId)
-      .select("_id name email role status isEmailVerified");
+      .select("_id name email role status isEmailVerified profileImage");
 
     if (!user || user.status !== "active") {
       return req.session.destroy(() => {
@@ -30,11 +30,12 @@ export const requireAuth = async (req, res, next) => {
 };
 
 export const allowRoles = (...roles) => (req, res, next) => {
+
   if (!req.user || !roles.includes(req.user.role)) {
+    console.log(`curr role is ${req.user.role},${roles}`)
     return res.status(403).json({
       message: "You are not authorized to access this resource.",
     });
   }
-
   next();
 };

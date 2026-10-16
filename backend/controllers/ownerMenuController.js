@@ -7,6 +7,7 @@ const menuItemFields = (body) => ({
   description: body.description || "",
   price: body.price,
   image: body.image || "",
+  imagePublicId: body.imagePublicId || "",
   category: body.category,
   foodType: body.foodType || "vegetarian",
   available: body.available ?? true,

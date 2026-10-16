@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Utensils,
@@ -20,12 +20,14 @@ import {
   X,
 } from "lucide-react";
 import api from "../../api/axios";
+import { uploadImage } from "../../api/uploadImage";
 
 const emptyMenuForm = {
   name: "",
   description: "",
   price: "",
   image: "",
+  imagePublicId: "",
   category: "",
   foodType: "vegetarian",
   available: true,
@@ -53,6 +55,8 @@ export default function RestaurantDashboard() {
   const navigate = useNavigate();
 
   const [restaurant, setRestaurant] = useState(null);
+  const [menuImageFile, setMenuImageFile] = useState(null);
+  const [imageUploading, setImageUploading] = useState(false);
   const [menuItems, setMenuItems] = useState([]);
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
@@ -156,6 +160,7 @@ export default function RestaurantDashboard() {
 
   const openCreateForm = () => {
     setEditingItem(null);
+    setMenuImageFile(null);
     setMenuForm(emptyMenuForm);
     setShowMenuForm(true);
     setMenuError("");
@@ -163,16 +168,19 @@ export default function RestaurantDashboard() {
 
   const openEditForm = (item) => {
     setEditingItem(item);
+    setMenuImageFile(null);
     setMenuForm({
       name: item.name || "",
       description: item.description || "",
       price: String(item.price ?? ""),
       image: item.image || "",
+      imagePublicId: item.imagePublicId || "",
       category: item.category || "",
       foodType: item.foodType || "vegetarian",
       available: item.available ?? true,
       preparationTime: item.preparationTime ?? 20,
     });
+    setMenuImageFile(null);
     setShowMenuForm(true);
     setMenuError("");
   };
@@ -197,6 +205,7 @@ export default function RestaurantDashboard() {
       description: menuForm.description.trim(),
       price: Number(menuForm.price),
       image: menuForm.image.trim(),
+      imagePublicId: menuForm.imagePublicId || "",
       category: menuForm.category.trim(),
       foodType: menuForm.foodType,
       available: menuForm.available,
@@ -204,6 +213,12 @@ export default function RestaurantDashboard() {
     };
 
     try {
+      if (menuImageFile) {
+        setImageUploading(true);
+        const uploaded = await uploadImage(menuImageFile, "menu");
+        payload.image = uploaded.image;
+        payload.imagePublicId = uploaded.imagePublicId;
+      }
       if (editingItem) {
         await api.patch(`/owner/menu/${editingItem._id}`, payload);
         showMessage("Menu item updated successfully.");
@@ -220,6 +235,7 @@ export default function RestaurantDashboard() {
       setMenuError(getError(err, "Unable to save menu item."));
     } finally {
       setSaving(false);
+      setImageUploading(false);
     }
   };
 
@@ -293,9 +309,8 @@ export default function RestaurantDashboard() {
 
   const renderStatus = (status) => (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold capitalize ring-1 ring-inset ${
-        statusClasses[status] || statusClasses.pending
-      }`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold capitalize ring-1 ring-inset ${statusClasses[status] || statusClasses.pending
+        }`}
     >
       {status === "approved" ? (
         <CheckCircle2 size={14} />
@@ -363,9 +378,8 @@ export default function RestaurantDashboard() {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-gray-200 bg-white transition-transform duration-200 lg:translate-x-0 ${
-          mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-gray-200 bg-white transition-transform duration-200 lg:translate-x-0 ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         <div className="flex h-20 items-center justify-between border-b border-gray-100 px-6">
           <div className="flex items-center gap-3">
@@ -409,11 +423,10 @@ export default function RestaurantDashboard() {
             <button
               key={id}
               onClick={() => changeTab(id)}
-              className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold transition ${
-                activeTab === id
+              className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold transition ${activeTab === id
                   ? "bg-orange-50 text-orange-600"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              }`}
+                }`}
             >
               <Icon size={19} />
               {label}
@@ -509,10 +522,9 @@ export default function RestaurantDashboard() {
                     {restaurant.status === "pending"
                       ? "Your application is awaiting admin approval. Menu management and restaurant availability are unavailable until approval."
                       : restaurant.status === "rejected"
-                      ? `Your application was rejected. ${
-                          restaurant.rejectionReason || "Contact the administrator for details."
+                        ? `Your application was rejected. ${restaurant.rejectionReason || "Contact the administrator for details."
                         }`
-                      : "Your restaurant is suspended. Contact the administrator for assistance."}
+                        : "Your restaurant is suspended. Contact the administrator for assistance."}
                   </p>
                   <button
                     onClick={() => navigate("/restaurant/register")}
@@ -721,9 +733,8 @@ export default function RestaurantDashboard() {
                         <div className="text-right">
                           <p className="font-bold">{formatPrice(item.price)}</p>
                           <p
-                            className={`mt-1 text-xs ${
-                              item.available ? "text-green-600" : "text-gray-500"
-                            }`}
+                            className={`mt-1 text-xs ${item.available ? "text-green-600" : "text-gray-500"
+                              }`}
                           >
                             {item.available ? "Available" : "Unavailable"}
                           </p>
@@ -891,16 +902,18 @@ export default function RestaurantDashboard() {
                       />
                     </FormField>
 
-                    <FormField label="Image URL">
+                    <FormField label="Food image (optional)">
                       <input
-                        name="image"
-                        type="url"
-                        value={menuForm.image}
-                        onChange={updateMenuField}
+                        name="imageFile"
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        onChange={(event) => setMenuImageFile(event.target.files?.[0] || null)}
                         className={inputClass}
-                        placeholder="https://example.com/dish.jpg"
-                        maxLength={2000}
                       />
+                      <p className="mt-1 text-xs text-gray-500">JPG, PNG or WebP; maximum 5 MB.</p>
+                      {(menuImageFile || menuForm.image) && (
+                        <img src={menuImageFile ? URL.createObjectURL(menuImageFile) : menuForm.image} alt="Food preview" className="mt-2 h-24 w-24 rounded-lg object-cover" />
+                      )}
                     </FormField>
 
                     <div className="sm:col-span-2">
@@ -937,8 +950,8 @@ export default function RestaurantDashboard() {
                       {saving
                         ? "Saving..."
                         : editingItem
-                        ? "Save changes"
-                        : "Add item"}
+                          ? "Save changes"
+                          : "Add item"}
                     </button>
                     <button
                       type="button"
@@ -1017,11 +1030,10 @@ export default function RestaurantDashboard() {
                           </td>
                           <td className="px-3 py-4">
                             <span
-                              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                                item.available
+                              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${item.available
                                   ? "bg-green-50 text-green-700"
                                   : "bg-gray-100 text-gray-600"
-                              }`}
+                                }`}
                             >
                               {item.available ? "Available" : "Unavailable"}
                             </span>
@@ -1082,17 +1094,16 @@ export default function RestaurantDashboard() {
                   <button
                     disabled={!approved || toggling}
                     onClick={toggleAvailability}
-                    className={`rounded-xl px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 ${
-                      restaurant.isAcceptingOrders
+                    className={`rounded-xl px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 ${restaurant.isAcceptingOrders
                         ? "bg-gray-700 hover:bg-gray-800"
                         : "bg-green-600 hover:bg-green-700"
-                    }`}
+                      }`}
                   >
                     {toggling
                       ? "Updating..."
                       : restaurant.isAcceptingOrders
-                      ? "Stop accepting orders"
-                      : "Start accepting orders"}
+                        ? "Stop accepting orders"
+                        : "Start accepting orders"}
                   </button>
                 </div>
 
@@ -1104,7 +1115,15 @@ export default function RestaurantDashboard() {
               </div>
 
               <div className="mt-6 rounded-2xl border border-gray-100 p-5">
-                <h3 className="font-bold">Registration details</h3>
+
+                <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+                  <h3 className="font-bold">Registration details</h3>
+
+                  <Link to="/restaurant/update" className="rounded-xl border border-slate-300 bg-white px-6 py-3.5 font-bold text-slate-700 hover:bg-slate-100">
+                    update restaurant details
+                  </Link>
+                </div>
+
                 <div className="mt-4 space-y-4">
                   <InfoRow label="Restaurant" value={restaurant.name} />
                   <InfoRow
@@ -1145,9 +1164,8 @@ function StatCard({ title, value, subtitle, icon: Icon, capitalize = false }) {
         <div>
           <p className="text-sm font-medium text-gray-500">{title}</p>
           <p
-            className={`mt-3 text-2xl font-extrabold ${
-              capitalize ? "capitalize" : ""
-            }`}
+            className={`mt-3 text-2xl font-extrabold ${capitalize ? "capitalize" : ""
+              }`}
           >
             {value}
           </p>
@@ -1182,4 +1200,3 @@ function FormField({ label, children }) {
     </label>
   );
 }
- 

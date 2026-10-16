@@ -1,5 +1,6 @@
 
 import Restaurant from "../models/Restaurant.js";
+import User from "../models/User.js";
 
 export const getRestaurantApplications = async (req, res, next) => {
   try {
@@ -39,6 +40,7 @@ export const reviewRestaurantApplication = async (req, res, next) => {
     const { decision, rejectionReason = "" } = req.validatedBody;
 
     const restaurant = await Restaurant.findById(restaurantId);
+    const userReso = await User.findById(restaurant.ownerId);
 
     if (!restaurant) {
       return res.status(404).json({
@@ -55,14 +57,16 @@ export const reviewRestaurantApplication = async (req, res, next) => {
     if (decision === "approve") {
       restaurant.status = "approved";
       restaurant.rejectionReason = "";
+      userReso.role = "restaurant"
       // Approval does not automatically open the restaurant.
       restaurant.isAcceptingOrders = false;
     } else {
       restaurant.status = "rejected";
+      userReso.role = "user"
       restaurant.rejectionReason = rejectionReason;
       restaurant.isAcceptingOrders = false;
     }
-
+    await userReso.save();
     await restaurant.save();
 
     res.json({

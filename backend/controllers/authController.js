@@ -8,6 +8,7 @@ const publicUser = (user) => ({
   role: user.role,
   isEmailVerified: user.isEmailVerified,
   phone: user.phone || "",
+  profileImage: user.profileImage || "",
 });
 
 const regenerateSession = (req) =>

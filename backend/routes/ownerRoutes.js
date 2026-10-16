@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import {
   applyForRestaurant,
+  editRestaurant,
   getMyRestaurant,
   updateRestaurantAvailability,
 } from "../controllers/ownerController.js";
@@ -27,15 +28,29 @@ const restaurantSchema = z
       })
       .strict(),
     image: z.string().url().max(2000).optional().or(z.literal("")),
+    imagePublicId: z.string().max(300).optional().or(z.literal("")),
   })
   .strict();
 
+const hello = async (req, res, next) => {
+  await console.log("rourrr");
+  next();
+};
 router.post(
   "/restaurant",
+  hello,
   requireAuth,
   allowRoles("user"),
   validate(restaurantSchema),
   applyForRestaurant,
+);
+
+router.patch(
+  "/restaurant/updateDetails",
+  requireAuth,
+  allowRoles("restaurant"),
+  validate(restaurantSchema),
+  editRestaurant,
 );
 
 router.get(
@@ -56,6 +71,7 @@ router.patch(
       })
       .strict(),
   ),
+
   updateRestaurantAvailability,
 );
 

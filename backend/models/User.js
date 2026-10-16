@@ -50,6 +50,9 @@ const userSchema = new mongoose.Schema(
       default: false,
     },
 
+    profileImage: { type: String, default: "" },
+    profileImagePublicId: { type: String, default: "" },
+
     // Optional phone number
     phone: {
       type: String,

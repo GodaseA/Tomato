@@ -79,6 +79,8 @@ const restaurantSchema = new mongoose.Schema(
       default: "",
     },
 
+    imagePublicId: { type: String, default: "" },
+
     // Admin approval status
     status: {
       type: String,

@@ -16,6 +16,7 @@ import OrderConfirmation from "./pages/OrderConfirmation";
 import MyOrders from "./pages/MyOrders";
 import CustomerDashboard from "./pages/CustomerDashboard";
 import { CartProvider } from "./context/CartContext";
+import RestaurantDetailUpdate from "./pages/restaurant/RestaurantDetailUpdate";
 
 function ComingSoon({ title }) {
   return (
@@ -53,6 +54,10 @@ function App() {
           <Route
             path="/restaurant/dashboard"
             element={<RestaurantDashboard />}
+          />
+          <Route
+            path="/restaurant/update"
+            element={<RestaurantDetailUpdate />}
           />
         </Route>
 

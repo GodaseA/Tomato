@@ -15,6 +15,7 @@ import adminRestaurantRoutes from "./routes/adminRestaurantRoutes.js";
 import ownerMenuRoutes from "./routes/ownerMenuRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import ownerOrderRoutes from "./routes/ownerOrderRoutes.js";
+import uploadRoutes from "./routes/uploadRoutes.js";
 
 import verifyOrigin from "./middleware/verifyOrigin.js";
 
@@ -88,12 +89,18 @@ app.use("/api/admin/restaurants", adminRestaurantRoutes);
 app.use("/api/owner/menu", ownerMenuRoutes);
 app.use("/api/owner/orders", ownerOrderRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/uploads", uploadRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found." });
 });
 
 app.use((error, req, res, next) => {
+  if (error?.name === "MulterError") {
+    const message = error.code === "LIMIT_FILE_SIZE" ? "Image must be 5 MB or smaller." : "Unable to process the uploaded image.";
+    return res.status(400).json({ message });
+  }
+  if (error?.status === 400) return res.status(400).json({ message: error.message });
   console.error(error);
 
   if (res.headersSent) {
