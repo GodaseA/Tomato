@@ -20,6 +20,7 @@ import uploadRoutes from "./routes/uploadRoutes.js";
 import verifyOrigin from "./middleware/verifyOrigin.js";
 
 const app = express();
+app.set("trust proxy", 1);
 
 const requiredEnv = [
   "MONGO_URI",
